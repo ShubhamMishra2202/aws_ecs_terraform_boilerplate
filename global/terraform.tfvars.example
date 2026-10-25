@@ -1,0 +1,5 @@
+name                 = "myapp"
+domain               = "example.com"
+validate_certificate = false # flip to true after adding the validation CNAMEs
+ecr_repositories     = ["app"]
+github_repository    = "my-org/my-repo" # or null to skip the CI role

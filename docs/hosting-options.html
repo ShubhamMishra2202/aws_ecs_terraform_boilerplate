@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hosting Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: engineering worksheet — scenario strip, then a configurator (controls | live result), then the full matrix, then assumptions. */
+:root {
+  --bg: #f4f6f3;
+  --surface: #ffffff;
+  --fg: #19201c;
+  --muted: #5b655f;
+  --line: #d7ddd6;
+  --accent: #1d5a85;
+  --accent-soft: #e3edf4;
+  --cost: #a35f0c;
+  --good: #2c7a4b;
+  --good-soft: #e2f1e7;
+  --warn: #9a6a00;
+  --warn-soft: #fbf0d6;
+  --bad: #b23a2e;
+  --bad-soft: #f8e3e0;
+  --font-display: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121714; --surface: #1a211d; --fg: #e4ebe6; --muted: #9aa69f; --line: #2d3731;
+    --accent: #7db6dd; --accent-soft: #1c2e3b; --cost: #e2a24d;
+    --good: #6fca93; --good-soft: #1b3326; --warn: #e6bb55; --warn-soft: #3a2f12;
+    --bad: #f08a7e; --bad-soft: #3d1f1b; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121714; --surface: #1a211d; --fg: #e4ebe6; --muted: #9aa69f; --line: #2d3731;
+  --accent: #7db6dd; --accent-soft: #1c2e3b; --cost: #e2a24d;
+  --good: #6fca93; --good-soft: #1b3326; --warn: #e6bb55; --warn-soft: #3a2f12;
+  --bad: #f08a7e; --bad-soft: #3d1f1b; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 36px 64px; display: grid; gap: 44px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(28px, 4vw, 40px); font-weight: 700; line-height: 1.1; }
+h2 { font-size: 22px; font-weight: 600; }
+h3 { font-size: 16px; font-weight: 600; }
+p { margin: 0; }
+code { font-family: var(--font-mono); font-size: 0.9em; }
+.lede { color: var(--muted); max-width: 68ch; }
+.eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+header { display: grid; gap: 12px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag { font-family: var(--font-mono); font-size: 12px; padding: 3px 8px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); background: var(--surface); }
+section { display: grid; gap: 16px; }
+.section-head { display: grid; gap: 6px; }
+
+/* Scenario strip */
+.scenarios { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.scn { text-align: left; font: inherit; color: inherit; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 10px; cursor: pointer; align-content: start; }
+.scn:hover { border-color: var(--accent); }
+.scn:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.scn[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.scn-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.scn-id { font-family: var(--font-mono); font-size: 12px; color: var(--accent); font-weight: 600; }
+.scn-figs { display: flex; gap: 18px; }
+.fig { display: grid; }
+.fig b { font-family: var(--font-mono); font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--cost); }
+.fig b.res { color: var(--fg); }
+.fig span { font-size: 12px; color: var(--muted); }
+.scn p { font-size: 13.5px; color: var(--muted); }
+.chip { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.chip.good { background: var(--good-soft); color: var(--good); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); }
+.chip.info { background: var(--accent-soft); color: var(--accent); }
+
+/* Configurator */
+.config { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .config { grid-template-columns: 1fr; } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px; display: grid; gap: 16px; min-width: 0; }
+.ctrl { display: grid; gap: 6px; }
+.ctrl label, .ctrl .lbl { font-size: 13px; font-weight: 600; }
+.ctrl small { color: var(--muted); font-size: 12.5px; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button { font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.seg button:disabled { opacity: 0.45; cursor: not-allowed; }
+.toggles { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.tgl { display: flex; align-items: center; gap: 8px; font-size: 13.5px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); cursor: pointer; }
+.tgl input { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; }
+.result-top { display: flex; flex-wrap: wrap; gap: 24px; align-items: end; }
+.big { display: grid; }
+.big b { font-family: var(--font-mono); font-size: 40px; line-height: 1; font-weight: 600; font-variant-numeric: tabular-nums; }
+.big b.money { color: var(--cost); }
+.big span { font-size: 12.5px; color: var(--muted); }
+.vs { font-size: 13.5px; color: var(--muted); }
+.vs strong { color: var(--fg); font-family: var(--font-mono); }
+.bars { display: grid; gap: 7px; }
+.bar { display: grid; grid-template-columns: minmax(0, 1fr) 64px; gap: 10px; align-items: center; font-size: 13px; }
+.bar-label { display: grid; gap: 3px; min-width: 0; }
+.bar-label span { overflow-wrap: anywhere; }
+.track { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; border: 1px solid var(--line); }
+.fill { height: 100%; background: var(--cost); }
+.bar .amt { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.notes { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.notes li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; font-size: 13.5px; }
+.notes .chip { margin-top: 2px; min-width: 52px; text-align: center; }
+.resgrid { display: flex; flex-wrap: wrap; gap: 6px; }
+.resgrid .tag { font-size: 11.5px; }
+.divider { border: 0; border-top: 1px solid var(--line); margin: 0; }
+
+/* Matrix */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 900px; font-size: 13.5px; }
+th, td { padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+thead th { font-family: var(--font-display); font-weight: 600; font-size: 14px; background: var(--bg); position: sticky; top: 0; }
+thead th .scn-id { display: block; }
+tbody th { font-weight: 500; color: var(--fg); width: 230px; }
+tbody th small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; }
+tr.group td { background: var(--bg); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding-block: 7px; }
+td.money { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--cost); font-weight: 600; }
+td.count { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 600; }
+.yes { color: var(--good); font-weight: 600; }
+.no { color: var(--muted); }
+.mid { color: var(--warn); font-weight: 600; }
+.neg { color: var(--bad); font-weight: 600; }
+td.hl, th.hl { background: var(--accent-soft); }
+.assume { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px 24px; margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--muted); }
+.assume li { border-top: 1px solid var(--line); padding-top: 8px; }
+.assume b { color: var(--fg); font-weight: 600; }
+@media (prefers-reduced-motion: no-preference) { .fill { transition: width 0.25s ease; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Terraform boilerplate · ECS on Fargate · AWS us-east-1</span>
+    <h1>How much infrastructure does your app need?</h1>
+    <p class="lede">Six ways to host a containerised backend, from a single EC2 box to the full stack this template deploys. Costs are monthly AWS list prices per environment. Only scenario B exists in this repo today; the others are variations you would build on top of it. Pick a scenario to load it into the configurator, then switch individual pieces on or off to see what changes.</p>
+    <div class="meta">
+      <span class="tag">Prices: on-demand, last checked Oct 2026</span>
+      <span class="tag">Resource counts: Terraform resources per env</span>
+      <span class="tag">External database: billed separately</span>
+    </div>
+  </header>
+
+  <section aria-labelledby="scn-h">
+    <div class="section-head">
+      <h2 id="scn-h">Scenarios</h2>
+      <p class="lede">Staging and prod cost per month. Prod uses the same layout with a 0.5 vCPU / 1 GB task, except B, which shows the template's actual prod settings. The chip says how much Terraform work each one needs from here.</p>
+    </div>
+    <div class="scenarios" id="scenarios"></div>
+  </section>
+
+  <section aria-labelledby="cfg-h">
+    <div class="section-head">
+      <h2 id="cfg-h">Configurator</h2>
+      <p class="lede">Each switch corresponds to a variable or module, either one this template already has or one you would add. The result updates the cost, the resource count and the trade-offs.</p>
+    </div>
+    <div class="config">
+      <div class="panel" id="controls">
+        <div class="ctrl">
+          <span class="lbl" id="l-entry">Public entry point</span>
+          <div class="seg" role="group" aria-labelledby="l-entry" data-key="entry">
+            <button type="button" data-v="alb">Load balancer (ALB)</button>
+            <button type="button" data-v="apigw">API Gateway + VPC Link</button>
+          </div>
+          <small>Gives clients and webhook senders a fixed HTTPS URL. Fargate task IPs change on every deploy, so one of these is required.</small>
+        </div>
+        <div class="ctrl">
+          <span class="lbl" id="l-egress">Outbound internet</span>
+          <div class="seg" role="group" aria-labelledby="l-egress" data-key="egress">
+            <button type="button" data-v="natinst">NAT instance</button>
+            <button type="button" data-v="natgw">NAT Gateway</button>
+            <button type="button" data-v="public">None (task gets public IP)</button>
+          </div>
+          <small>How the app reaches third-party APIs and any database outside AWS.</small>
+        </div>
+        <div class="ctrl">
+          <span class="lbl" id="l-db">Database</span>
+          <div class="seg" role="group" aria-labelledby="l-db" data-key="db">
+            <button type="button" data-v="external">External (e.g. Supabase, Neon)</button>
+            <button type="button" data-v="rds-micro">RDS micro</button>
+            <button type="button" data-v="rds-small">RDS small</button>
+            <button type="button" data-v="rds-maz">RDS small Multi-AZ</button>
+          </div>
+        </div>
+        <div class="ctrl">
+          <span class="lbl" id="l-size">Task size (the server)</span>
+          <div class="seg" role="group" aria-labelledby="l-size" data-key="size">
+            <button type="button" data-v="s">0.25 vCPU / 0.5 GB</button>
+            <button type="button" data-v="m">0.5 vCPU / 1 GB</button>
+            <button type="button" data-v="l">1 vCPU / 2 GB</button>
+          </div>
+        </div>
+        <div class="ctrl">
+          <span class="lbl" id="l-count">Running tasks</span>
+          <div class="seg" role="group" aria-labelledby="l-count" data-key="count">
+            <button type="button" data-v="1">1</button>
+            <button type="button" data-v="2">2</button>
+          </div>
+        </div>
+        <div class="ctrl">
+          <span class="lbl">Extras</span>
+          <div class="toggles">
+            <label class="tgl"><input type="checkbox" id="t-bastion" data-key="bastion"> Bastion host</label>
+            <label class="tgl"><input type="checkbox" id="t-autoscale" data-key="autoscale"> Autoscaling</label>
+            <label class="tgl"><input type="checkbox" id="t-insights" data-key="insights"> Container Insights</label>
+            <label class="tgl"><input type="checkbox" id="t-alarms" data-key="alarms"> Alarms + SNS</label>
+            <label class="tgl"><input type="checkbox" id="t-frontend" data-key="frontend"> Frontend on S3 + CloudFront</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="result" aria-live="polite">
+        <div class="result-top">
+          <div class="big"><b class="money num" id="r-cost">$0</b><span>per month, AWS only</span></div>
+          <div class="big"><b class="num" id="r-res">0</b><span>Terraform resources</span></div>
+        </div>
+        <p class="vs" id="r-vs"></p>
+        <hr class="divider">
+        <div class="ctrl"><span class="lbl">Where the money goes</span><div class="bars" id="r-bars"></div></div>
+        <hr class="divider">
+        <div class="ctrl"><span class="lbl">Trade-offs of this combination</span><ul class="notes" id="r-notes"></ul></div>
+        <hr class="divider">
+        <div class="ctrl"><span class="lbl">Resource groups</span><div class="resgrid" id="r-groups"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="mx-h">
+    <div class="section-head">
+      <h2 id="mx-h">Full comparison</h2>
+      <p class="lede">Every scenario side by side: cost, resource count, which pieces it includes, and what you get in return. The highlighted column is the one loaded in the configurator.</p>
+    </div>
+    <div class="table-wrap"><table id="matrix"></table></div>
+  </section>
+
+  <section aria-labelledby="as-h">
+    <h2 id="as-h">Assumptions</h2>
+    <ul class="assume">
+      <li><b>Prices go stale.</b> These are us-east-1 on-demand list prices checked in Oct 2026. Check the AWS pricing pages before quoting them.</li>
+      <li><b>Fargate</b> x86: $0.04048 per vCPU-hour, $0.004445 per GB-hour, 730 hours a month.</li>
+      <li><b>Public IPv4</b>: $3.65 per address per month, including dynamic IPs. An ALB holds 2.</li>
+      <li><b>ALB</b>: $16.43 fixed plus about $1.60 of capacity units at low traffic.</li>
+      <li><b>API Gateway HTTP API</b>: $1 per million requests. Cloud Map adds $0.10 per registered task.</li>
+      <li><b>NAT</b>: t4g.nano instance with 8 GB disk is $3.71. A NAT Gateway is $32.85 plus data, about $34.</li>
+      <li><b>RDS</b> PostgreSQL gp3: micro 20 GB $14, small 50 GB $29, small Multi-AZ $58.</li>
+      <li><b>CloudWatch</b>: first 10 alarms are free. Logs about $1 a month at low volume. Container Insights about $7.</li>
+      <li><b>EC2 baseline</b>: t3.small $15.18, 15 GB gp3 $1.20, one public IP $3.65. Uses the default VPC. Caddy provides free HTTPS.</li>
+      <li><b>Not included</b>: an external database plan, third-party APIs, and data transfer beyond the free 100 GB.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function () {
+  var HRS = 730;
+  var IP = 3.65;
+  var SIZES = {
+    s: { label: "0.25 vCPU / 0.5 GB", vcpu: 0.25, gb: 0.5 },
+    m: { label: "0.5 vCPU / 1 GB", vcpu: 0.5, gb: 1 },
+    l: { label: "1 vCPU / 2 GB", vcpu: 1, gb: 2 }
+  };
+  var DB = {
+    "external": { label: "External database", cost: 0 },
+    "rds-micro": { label: "RDS db.t4g.micro, 20 GB", cost: 14 },
+    "rds-small": { label: "RDS db.t4g.small, 50 GB", cost: 29 },
+    "rds-maz": { label: "RDS db.t4g.small Multi-AZ, 50 GB", cost: 58.4 }
+  };
+  function fargate(size) { var s = SIZES[size]; return (s.vcpu * 0.04048 + s.gb * 0.004445) * HRS; }
+
+  // One function computes everything, so the cards, configurator and matrix always agree.
+  function calc(c) {
+    var lines = [];
+    var groups = [];
+    var res = 0;
+    function add(label, cost) { if (cost > 0) lines.push([label, cost]); }
+    function grp(label, n) { res += n; groups.push(label + " · " + n); }
+
+    var needPrivate = c.egress !== "public" || c.db !== "external" || c.bastion;
+    var alarmCount = 0;
+
+    grp("Core network (VPC, public subnets, routes)", 8);
+    grp("ECS cluster + IAM roles", 7);
+    grp("App security group + egress", 2);
+    grp("Web service, task def, logs", 3);
+    grp("Migration task", 2);
+
+    if (c.entry === "alb") {
+      grp("ALB, listeners, target group, SG rule", 6);
+      add("Load balancer (ALB)", 18);
+      add("ALB public IPs ×2", 2 * IP);
+      alarmCount += 4;
+    } else {
+      grp("API Gateway, VPC Link, Cloud Map, domain", 11);
+      add("API Gateway requests", 1);
+      add("Cloud Map service discovery", 0.10 * c.count);
+      alarmCount += 2;
+    }
+
+    if (c.egress === "natinst") {
+      grp("Private subnets + NAT instance", 10);
+      add("NAT instance (t4g.nano)", 3.71);
+      add("NAT Elastic IP", IP);
+    } else if (c.egress === "natgw") {
+      grp("Private subnets + NAT Gateway", 8);
+      add("NAT Gateway", 34);
+      add("NAT Elastic IP", IP);
+    } else {
+      if (needPrivate) grp("Private subnets (for DB/bastion)", 5);
+      add("Task public IPs ×" + c.count, IP * c.count);
+    }
+
+    add("Fargate tasks ×" + c.count + " (" + SIZES[c.size].label + ")", fargate(c.size) * c.count);
+
+    if (c.db !== "external") {
+      grp("RDS + subnet/param groups + SSM password", 6);
+      add(DB[c.db].label, DB[c.db].cost);
+      alarmCount += 2;
+    }
+    if (c.bastion) {
+      grp("Bastion + IAM + SG", c.db !== "external" ? 6 : 5);
+      add("Bastion (t4g.nano)", 3.71);
+    }
+    if (c.autoscale) grp("Autoscaling target + 2 policies", 3);
+    if (c.insights) add("Container Insights", 7);
+    if (c.frontend) { grp("Frontend S3 + CloudFront", 8); add("CloudFront + S3", 1); }
+
+    if (c.alarms) {
+      alarmCount += 2; // ECS CPU + memory
+      grp("SNS topic + " + alarmCount + " alarms", 1 + alarmCount);
+      if (alarmCount > 10) add("Alarms beyond free 10", (alarmCount - 10) * 0.1);
+    }
+    add("CloudWatch logs", c.insights ? 2 : 1);
+
+    var total = lines.reduce(function (s, l) { return s + l[1]; }, 0);
+    return { total: total, res: res, lines: lines, groups: groups };
+  }
+
+  var EC2 = { total: 15.18 + 1.20 + IP, res: 3 };
+
+  var BASE = { entry: "alb", egress: "natinst", db: "external", size: "s", count: "1", bastion: false, autoscale: false, insights: false, alarms: true, frontend: true };
+  function preset(o) { var p = {}; for (var k in BASE) p[k] = BASE[k]; for (var j in o) p[j] = o[j]; return p; }
+
+  var SCN = [
+    { id: "A", name: "Single EC2 box", ec2: true, verdict: ["warn", "Separate setup"],
+      blurb: "t3.small, 15 GB disk, Docker + Caddy, public IP. No load balancer, no rolling deploys. Not built from this template." },
+    { id: "B", name: "This template, as shipped", verdict: ["good", "Ready to apply"],
+      cfg: preset({ db: "rds-micro", bastion: true }),
+      prod: preset({ egress: "natgw", db: "rds-maz", size: "m", count: "2", bastion: true, autoscale: true, insights: true }),
+      blurb: "Staging: RDS, bastion, NAT instance, ALB. Prod adds a NAT Gateway, Multi-AZ RDS, 2 tasks, autoscaling and Container Insights." },
+    { id: "C", name: "ECS lean: ALB + NAT", verdict: ["info", "Small change"],
+      cfg: preset({}),
+      blurb: "External database instead of RDS, no bastion. Private tasks behind an ALB, outbound through a NAT instance." },
+    { id: "D", name: "ECS: ALB, no NAT", verdict: ["warn", "Moderate change"],
+      cfg: preset({ egress: "public" }),
+      blurb: "Same as C, but tasks sit in public subnets with their own IP. Security groups still block inbound." },
+    { id: "E", name: "ECS: API Gateway + NAT", verdict: ["warn", "Larger change"],
+      cfg: preset({ entry: "apigw" }),
+      blurb: "API Gateway replaces the ALB. Keeps private tasks and a fixed outbound IP." },
+    { id: "F", name: "ECS minimal: API Gateway, no NAT", verdict: ["warn", "Larger change"],
+      cfg: preset({ entry: "apigw", egress: "public" }),
+      blurb: "Cheapest ECS layout. Keeps rolling deploys, auto-rollback and self-healing." }
+  ];
+  SCN.forEach(function (s) {
+    if (s.ec2) { s.stg = EC2.total; s.prd = EC2.total; s.res = EC2.res; return; }
+    var r = calc(s.cfg);
+    s.stg = r.total; s.res = r.res;
+    s.prd = calc(s.prod || preset(Object.assign({}, s.cfg, { size: "m" }))).total;
+  });
+
+  function money(n) { return "$" + (n < 10 ? n.toFixed(2) : Math.round(n)); }
+
+  // Scenario cards
+  var host = document.getElementById("scenarios");
+  SCN.forEach(function (s) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "scn"; b.dataset.id = s.id;
+    b.innerHTML =
+      '<div class="scn-top"><span class="scn-id">' + s.id + '</span><span class="chip ' + s.verdict[0] + '">' + s.verdict[1] + '</span></div>' +
+      '<h3>' + s.name + '</h3>' +
+      '<div class="scn-figs"><div class="fig"><b>' + money(s.stg) + '</b><span>staging / mo</span></div>' +
+      '<div class="fig"><b>' + money(s.prd) + '</b><span>prod / mo</span></div>' +
+      '<div class="fig"><b class="res">' + s.res + '</b><span>resources</span></div></div>' +
+      '<p>' + s.blurb + '</p>';
+    b.addEventListener("click", function () { if (s.ec2) { showEc2(); } else { state = Object.assign({}, s.cfg); active = s.id; render(); } });
+    host.appendChild(b);
+  });
+
+  var state = Object.assign({}, SCN[1].cfg);
+  var active = "B";
+
+  // Controls
+  document.querySelectorAll(".seg").forEach(function (g) {
+    g.addEventListener("click", function (e) {
+      var btn = e.target.closest("button"); if (!btn || btn.disabled) return;
+      state[g.dataset.key] = btn.dataset.v; active = matchScenario(); render();
+    });
+  });
+  document.querySelectorAll(".tgl input").forEach(function (i) {
+    i.addEventListener("change", function () { state[i.dataset.key] = i.checked; active = matchScenario(); render(); });
+  });
+
+  function matchScenario() {
+    for (var i = 0; i < SCN.length; i++) {
+      var s = SCN[i]; if (s.ec2) continue;
+      var same = true; for (var k in BASE) if (String(s.cfg[k]) !== String(state[k])) same = false;
+      if (same) return s.id;
+    }
+    return null;
+  }
+
+  function notesFor(c) {
+    var n = [];
+    if (c.entry === "alb") {
+      n.push(["good", "Standard, well-understood HTTPS entry with health checks and connection draining."]);
+      n.push(["bad", "About $25 a month in fixed cost (ALB + 2 IPs) even with zero traffic."]);
+    } else {
+      n.push(["good", "Pay per request: about $1 a month at low volume."]);
+      n.push(["warn", "Requests over 30 seconds time out. Fine for typical API calls and webhooks, not for long uploads or reports."]);
+      n.push(["warn", "Needs a container healthCheck so ECS replaces a hung task (no ALB health check)."]);
+    }
+    if (c.egress === "natinst") n.push(["good", "Tasks stay private and leave through one fixed IP for allowlists."]), n.push(["warn", "NAT instance is a single point of failure for all outbound calls."]);
+    if (c.egress === "natgw") n.push(["good", "Managed, highly available NAT."]), n.push(["bad", "About $38 a month, the largest single line item."]);
+    if (c.egress === "public") n.push(["warn", "Each task has a public IP. Security groups block inbound, but isolation is weaker."]), n.push(["warn", "No single fixed outbound IP for database or partner allowlists."]);
+    if (c.db === "external") n.push(["info", "Database is billed and managed outside AWS. Store its connection string as an SSM secret."]);
+    else n.push(["good", "Database stays inside the VPC, with backups and a generated password that never reaches state."]);
+    if (c.db === "rds-maz") n.push(["warn", "Multi-AZ survives an AZ outage but doubles the database cost."]);
+    if (c.bastion && c.egress === "public") n.push(["bad", "The bastion sits in a private subnet and cannot reach SSM without a NAT."]);
+    if (c.bastion && c.db === "external") n.push(["warn", "Bastion has nothing private to reach once the database is outside AWS."]);
+    if (c.count === "2" || c.autoscale) n.push(["warn", "Scheduled jobs that run in-process would run in every task. Move them to a worker (worker_command) first."]);
+    if (!c.alarms) n.push(["bad", "No alerts. You find out about outages from users."]);
+    if (c.insights) n.push(["info", "Per-task CPU and memory metrics. Useful for tuning, not needed at launch."]);
+    if (!c.frontend) n.push(["info", "Frontend must be hosted elsewhere (Vercel, Netlify)."]);
+    n.push(["good", "Rolling deploys, automatic rollback and self-healing tasks. No OS to patch."]);
+    return n;
+  }
+
+  function showEc2() {
+    active = "A";
+    paintCards();
+    document.getElementById("r-cost").textContent = money(EC2.total);
+    document.getElementById("r-res").textContent = EC2.res;
+    document.getElementById("r-vs").innerHTML = "This is the baseline the ECS options are compared against.";
+    var lines = [["EC2 t3.small", 15.18], ["Public IP", IP], ["15 GB gp3 disk", 1.20]];
+    paintBars(lines, EC2.total);
+    var n = [
+      ["good", "Lowest cost. 2 vCPU and 2 GB RAM, more raw power than a small Fargate task."],
+      ["bad", "Every deploy is a short outage. A bad deploy stays broken until fixed by hand."],
+      ["bad", "A crashed process or full disk stays down until someone notices."],
+      ["bad", "You patch the OS, Docker and Caddy, and manage SSH keys."],
+      ["warn", "A dynamic IP changes on stop/start and breaks DNS and webhooks. Use an Elastic IP."],
+      ["warn", "Staging would not match an ECS prod, so the real deploy path goes untested."]
+    ];
+    paintNotes(n);
+    document.getElementById("r-groups").innerHTML = ["EC2 instance", "Security group", "Key pair"].map(function (g) { return '<span class="tag">' + g + '</span>'; }).join("");
+    document.querySelectorAll("#controls button, #controls input").forEach(function (el) { el.setAttribute("aria-pressed", "false"); });
+    paintMatrix();
+  }
+
+  function paintBars(lines, total) {
+    var max = Math.max.apply(null, lines.map(function (l) { return l[1]; }));
+    document.getElementById("r-bars").innerHTML = lines.slice().sort(function (a, b) { return b[1] - a[1]; }).map(function (l) {
+      return '<div class="bar"><div class="bar-label"><span>' + l[0] + '</span><div class="track"><div class="fill" style="width:' + (l[1] / max * 100).toFixed(1) + '%"></div></div></div><span class="amt">' + money(l[1]) + '</span></div>';
+    }).join("");
+  }
+  function paintNotes(n) {
+    var label = { good: "Gain", warn: "Watch", bad: "Cost", info: "Note" };
+    document.getElementById("r-notes").innerHTML = n.map(function (x) {
+      return '<li><span class="chip ' + x[0] + '">' + label[x[0]] + '</span><span>' + x[1] + '</span></li>';
+    }).join("");
+  }
+  function paintCards() {
+    document.querySelectorAll(".scn").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.id === active ? "true" : "false"); });
+  }
+
+  function render() {
+    paintCards();
+    document.querySelectorAll(".seg").forEach(function (g) {
+      g.querySelectorAll("button").forEach(function (b) { b.setAttribute("aria-pressed", String(state[g.dataset.key]) === b.dataset.v ? "true" : "false"); });
+    });
+    document.querySelectorAll(".tgl input").forEach(function (i) { i.checked = !!state[i.dataset.key]; });
+    var r = calc(state);
+    document.getElementById("r-cost").textContent = money(r.total);
+    document.getElementById("r-res").textContent = r.res;
+    var d = r.total - EC2.total;
+    document.getElementById("r-vs").innerHTML = "vs single EC2 box (" + money(EC2.total) + "): <strong>" + (d >= 0 ? "+" : "−") + money(Math.abs(d)) + "</strong> a month" + (active ? " · matches scenario <strong>" + active + "</strong>" : " · custom combination");
+    paintBars(r.lines, r.total);
+    paintNotes(notesFor(state));
+    document.getElementById("r-groups").innerHTML = r.groups.map(function (g) { return '<span class="tag">' + g + '</span>'; }).join("");
+    paintMatrix();
+  }
+
+  // Matrix
+  var Y = '<span class="yes">✓</span>', N = '<span class="no">—</span>';
+  function cell(v) { return v === true ? Y : v === false ? N : v; }
+  var ROWS = [
+    ["group", "Cost and size"],
+    ["Staging per month", function (s) { return { cls: "money", v: money(s.stg) }; }],
+    ["Prod per month", function (s) { return { cls: "money", v: money(s.prd) }; }, "Prod task 0.5 vCPU / 1 GB"],
+    ["Terraform resources", function (s) { return { cls: "count", v: s.res }; }],
+    ["vs EC2 box (staging)", function (s) { var d = s.stg - EC2.total; return { cls: "money", v: s.ec2 ? "baseline" : "+" + money(d) }; }],
+    ["group", "What gets created"],
+    ["Custom VPC + subnets", ["default VPC", true, true, true, true, true]],
+    ["Private subnets", [false, true, true, false, true, false]],
+    ["NAT", [false, "instance (prod: Gateway)", "instance", false, "instance", false]],
+    ["Load balancer (ALB)", [false, true, true, true, false, false]],
+    ["API Gateway + VPC Link", [false, false, false, false, true, true]],
+    ["Compute", ["EC2 t3.small", "Fargate", "Fargate", "Fargate", "Fargate", "Fargate"]],
+    ["Database", ["External", "RDS", "External", "External", "External", "External"]],
+    ["Bastion host", [false, true, false, false, false, false]],
+    ["Frontend S3 + CloudFront", ["on the box or separate", true, true, true, true, true]],
+    ["Alarms + SNS", ['<span class="mid">DIY</span>', true, true, true, true, true]],
+    ["Autoscaling", [false, "prod only", false, false, false, false]],
+    ["group", "What you get"],
+    ["Zero-downtime deploys", [false, true, true, true, true, true]],
+    ["Automatic rollback on failed deploy", [false, true, true, true, true, true]],
+    ["Replaces crashed tasks automatically", ['<span class="mid">restart policy only</span>', true, true, true, true, true]],
+    ["No OS or server to patch", [false, true, true, true, true, true]],
+    ["Fixed HTTPS hostname for webhooks", ['<span class="mid">needs Elastic IP</span>', true, true, true, true, true]],
+    ["App unreachable except via entry point", [false, true, true, '<span class="mid">security groups only</span>', true, '<span class="mid">security groups only</span>']],
+    ["Fixed outbound IP", ['<span class="mid">if Elastic IP</span>', true, true, false, true, false]],
+    ["Shell into running app", ["SSH", "ECS Exec", "ECS Exec", "ECS Exec", "ECS Exec", "ECS Exec"]],
+    ["Direct DB access from laptop", ["provider dashboard", "bastion", "provider dashboard", "provider dashboard", "provider dashboard", "provider dashboard"]],
+    ["Staging matches ECS prod", [false, true, true, true, true, true]],
+    ["group", "Limits and risks"],
+    ["Request timeout", ["none", "ALB 60s (configurable)", "ALB 60s (configurable)", "ALB 60s (configurable)", '<span class="mid">30s hard limit</span>', '<span class="mid">30s hard limit</span>']],
+    ["Single point of failure", ['<span class="neg">the whole box</span>', "NAT (staging)", "NAT instance", "none", "NAT instance", "none"]],
+    ["Ongoing upkeep", ['<span class="neg">high</span>', '<span class="mid">medium</span>', "low", "low", "low", "low"]],
+    ["Terraform work needed", ["new, small", "none (ships today)", '<span class="mid">make RDS + bastion optional</span>', '<span class="mid">+ tasks in public subnets</span>', '<span class="neg">+ API Gateway module</span>', '<span class="neg">+ API Gateway module</span>']]
+  ];
+  function paintMatrix() {
+    var t = document.getElementById("matrix");
+    var h = '<thead><tr><th scope="col">Item</th>' + SCN.map(function (s) {
+      return '<th scope="col" class="' + (s.id === active ? "hl" : "") + '"><span class="scn-id">' + s.id + '</span>' + s.name + '</th>';
+    }).join("") + '</tr></thead><tbody>';
+    ROWS.forEach(function (r) {
+      if (r[0] === "group") { h += '<tr class="group"><td colspan="' + (SCN.length + 1) + '">' + r[1] + '</td></tr>'; return; }
+      h += '<tr><th scope="row">' + r[0] + (r[2] ? '<small>' + r[2] + '</small>' : '') + '</th>';
+      SCN.forEach(function (s, i) {
+        var hl = s.id === active ? "hl" : "";
+        if (typeof r[1] === "function") { var o = r[1](s); h += '<td class="' + o.cls + ' ' + hl + '">' + o.v + '</td>'; }
+        else h += '<td class="' + hl + '">' + cell(r[1][i]) + '</td>';
+      });
+      h += '</tr>';
+    });
+    t.innerHTML = h + '</tbody>';
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
